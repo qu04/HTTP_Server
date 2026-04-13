@@ -1,0 +1,10 @@
+server
+build
+*.o
+*.obj
+*.exe
+*.out
+*.log
+.git
+.gitignore
+.vscode

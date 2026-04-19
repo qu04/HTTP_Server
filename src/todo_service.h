@@ -9,6 +9,7 @@ public:
 
     std::vector<std::string> loadTodos() const;
     bool addTodo(const std::string& todo_text) const;
+    bool deleteTodo(const std::string& todo_text) const;
 
 private:
     std::string data_file_path_;

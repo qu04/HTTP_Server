@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+static std::string decodeFormValue(const std::string& value);
+
 Router::Router(TodoService& todo_service) : todo_service_(todo_service) {}
 
 std::string Router::handleRequest(const std::string& request_text) const {
@@ -16,12 +18,27 @@ std::string Router::handleRequest(const std::string& request_text) const {
         return buildHttpResponse(buildHomePage());
     }
 
+    if(request_text.rfind("POST /todos/delete") == 0){
+            size_t body_pos = request_text.find("\r\n\r\n");
+            if(body_pos != std::string::npos){
+                std::string body = request_text.substr(body_pos + 4);
+                if(body.rfind("todo=", 0) == 0){
+                    std::string todo_text = decodeFormValue(body.substr(5));
+                    if(todo_service_.deleteTodo(todo_text)){
+                        return buildHttpResponse("删除成功", "200 OK", "text/plain; charset=utf-8");
+                    }
+                }
+                return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
+            }
+            return buildHttpResponse("请求格式错误", "400 Bad Request", "text/plain; charset=utf-8");
+        }
+
     if (request_text.rfind("POST /todos", 0) == 0) {
         size_t body_pos = request_text.find("\r\n\r\n");
         if (body_pos != std::string::npos) {
             std::string body = request_text.substr(body_pos + 4);
             if (body.rfind("todo=", 0) == 0) {
-                std::string todo_text = body.substr(5);
+                std::string todo_text = decodeFormValue(body.substr(5));
                 if (todo_service_.addTodo(todo_text)) {
                     return buildHttpResponse("添加成功", "200 OK", "text/plain; charset=utf-8");
                 }
@@ -41,20 +58,7 @@ std::string Router::handleRequest(const std::string& request_text) const {
     // 5. 去掉前面的 todo= 后，调用 todo_service_.deleteTodo(todo_text)
     // 6. 根据返回值返回“删除成功”或“删除失败”的页面
     // 第一版先把链路跑通，不用急着处理 URL 编码。
-    if(request_text.rfind("POST /todos/delete") == 0){
-        size_t body_pos = request_text.find("\r\n\r\n");
-        if(body_pos != std::string::npos){
-            std::string body = request_text.substr(body_pos + 4);
-            if(body.rfind("todo=", 0) == 0){
-                std::string todo_text = body.substr(5);
-                if(todo_service_.deleteTodo(todo_text)){
-                    return buildHttpResponse("删除成功", "200 OK", "text/plain; charset=utf-8");
-                }
-            }
-            return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
-        }
-        return buildHttpResponse("请求格式错误", "400 Bad Request", "text/plain; charset=utf-8");
-    }
+    
 
     std::string not_found_html =
         "<html><body>"

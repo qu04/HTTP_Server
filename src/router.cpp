@@ -108,11 +108,21 @@ std::string Router::buildHomePage() const {
     html << "<!DOCTYPE html>\n";
     html << "<html lang=\"zh-CN\">\n";
     html << "<head>\n";
+    html << "<style>\n";
+    html << "body {\n";
+    html << "  background-image: url('https://embed.pixiv.net/pixivision/zh/a/11469/ogimage.jpg');\n";
+    html << "  background-size: cover;\n";
+    html << "  background-position: center;\n";
+    html << "  background-repeat: no-repeat;\n";
+    html << "}\n";
+    html << "</style>\n";
+
     html << "  <meta charset=\"UTF-8\">\n";
     html << "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
     html << "  <title>Personal Productivity Server</title>\n";
     html << "</head>\n";
     html << "<body>\n";
+    html << "<img src=\"https://truth.bahamut.com.tw/s01/202602/forum/84021/0ae392f0607c1a820e15b0a75cc52ebf.JPG\" alt=\"banner\" style=\"width: 300px; border-radius: 12px;\">\n";
     html << "  <h1>Hello from Azure C++ Server!</h1>\n";
     html << "  <p>这是你的第一个可持续扩展的 C++ 实用项目。</p>\n";
     html << "  <h2>当前待办</h2>\n";

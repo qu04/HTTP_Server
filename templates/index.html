@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Productivity Server</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <img class="banner" src="https://truth.bahamut.com.tw/s01/202602/forum/84021/0ae392f0607c1a820e15b0a75cc52ebf.JPG" alt="banner">
+
+  <div class="page-card">
+    <h1>Hello from Azure C++ Server!</h1>
+    <p>这是你的第一个可持续扩展的 C++ 实用项目。</p>
+
+    <h2>当前待办</h2>
+    <ul>
+{{TODOS}}
+    </ul>
+
+    <h2>添加待办</h2>
+    <form method="POST" action="/todos">
+      <input type="text" name="todo" placeholder="输入新的待办">
+      <button type="submit">添加</button>
+    </form>
+  </div>
+</body>
+</html>

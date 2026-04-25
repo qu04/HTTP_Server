@@ -2,6 +2,7 @@
 #include "todo_service.h"
 
 #include <cctype>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -46,11 +47,38 @@ static std::string decodeFormValue(const std::string& value) {
     return decoded;
 }
 
+static std::string readTextFile(const std::string& path) {
+    std::ifstream input(path);
+    if (!input.is_open()) {
+        return "";
+    }
+
+    std::ostringstream content;
+    content << input.rdbuf();
+    return content.str();
+}
+
+static void replaceAll(std::string& text, const std::string& from, const std::string& to) {
+    std::size_t pos = 0;
+    while ((pos = text.find(from, pos)) != std::string::npos) {
+        text.replace(pos, from.size(), to);
+        pos += to.size();
+    }
+}
+
 Router::Router(TodoService& todo_service) : todo_service_(todo_service) {}
 
 std::string Router::handleRequest(const std::string& request_text) const {
     if (request_text.rfind("GET /health", 0) == 0) {
         return buildHttpResponse("ok", "200 OK", "text/plain; charset=utf-8");
+    }
+
+    if (request_text.rfind("GET /static/style.css", 0) == 0) {
+        const std::string css = readTextFile("static/style.css");
+        if (css.empty()) {
+            return buildHttpResponse("CSS file not found", "404 Not Found", "text/plain; charset=utf-8");
+        }
+        return buildHttpResponse(css, "200 OK", "text/css; charset=utf-8");
     }
 
     if (request_text.rfind("GET / ", 0) == 0 || request_text.rfind("GET /HTTP", 0) == 0) {
@@ -64,7 +92,7 @@ std::string Router::handleRequest(const std::string& request_text) const {
             if (body.rfind("todo=", 0) == 0) {
                 const std::string todo_text = decodeFormValue(body.substr(5));
                 if (todo_service_.deleteTodo(todo_text)) {
-                    return buildHttpResponse("删除成功", "200 OK", "text/plain; charset=utf-8");
+                    return buildRedirectResponse("/");
                 }
             }
 
@@ -81,7 +109,7 @@ std::string Router::handleRequest(const std::string& request_text) const {
             if (body.rfind("todo=", 0) == 0) {
                 const std::string todo_text = decodeFormValue(body.substr(5));
                 if (todo_service_.addTodo(todo_text)) {
-                    return buildHttpResponse("添加成功", "200 OK", "text/plain; charset=utf-8");
+                    return buildRedirectResponse("/");
                 }
             }
 
@@ -103,51 +131,24 @@ std::string Router::handleRequest(const std::string& request_text) const {
 
 std::string Router::buildHomePage() const {
     const std::vector<std::string> todos = todo_service_.loadTodos();
-
-    std::ostringstream html;
-    html << "<!DOCTYPE html>\n";
-    html << "<html lang=\"zh-CN\">\n";
-    html << "<head>\n";
-    html << "<style>\n";
-    html << "body {\n";
-    html << "  background-image: url('https://embed.pixiv.net/pixivision/zh/a/11469/ogimage.jpg');\n";
-    html << "  background-size: cover;\n";
-    html << "  background-position: center;\n";
-    html << "  background-repeat: no-repeat;\n";
-    html << "}\n";
-    html << "</style>\n";
-
-    html << "  <meta charset=\"UTF-8\">\n";
-    html << "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
-    html << "  <title>Personal Productivity Server</title>\n";
-    html << "</head>\n";
-    html << "<body>\n";
-    html << "<img src=\"https://truth.bahamut.com.tw/s01/202602/forum/84021/0ae392f0607c1a820e15b0a75cc52ebf.JPG\" alt=\"banner\" style=\"width: 300px; border-radius: 12px;\">\n";
-    html << "  <h1>Hello from Azure C++ Server!</h1>\n";
-    html << "  <p>这是你的第一个可持续扩展的 C++ 实用项目。</p>\n";
-    html << "  <h2>当前待办</h2>\n";
-    html << "  <ul>\n";
-
-    for (const std::string& todo : todos) {
-        html << "    <li>\n";
-        html << "      " << todo << "\n";
-        html << "      <form method=\"POST\" action=\"/todos/delete\">\n";
-        html << "        <input type=\"hidden\" name=\"todo\" value=\"" << todo << "\">\n";
-        html << "        <button type=\"submit\">删除</button>\n";
-        html << "      </form>\n";
-        html << "    </li>\n";
+    std::string html = readTextFile("templates/index.html");
+    if (html.empty()) {
+        return "<h1>Template file not found</h1>";
     }
 
-    html << "  </ul>\n";
-    html << "  <h2>添加待办</h2>\n";
-    html << "  <form method=\"POST\" action=\"/todos\">\n";
-    html << "    <input type=\"text\" name=\"todo\" placeholder=\"输入新的待办\">\n";
-    html << "    <button type=\"submit\">添加</button>\n";
-    html << "  </form>\n";
-    html << "</body>\n";
-    html << "</html>\n";
+    std::ostringstream todo_items;
+    for (const std::string& todo : todos) {
+        todo_items << "      <li>\n";
+        todo_items << "        " << todo << "\n";
+        todo_items << "        <form method=\"POST\" action=\"/todos/delete\">\n";
+        todo_items << "          <input type=\"hidden\" name=\"todo\" value=\"" << todo << "\">\n";
+        todo_items << "          <button type=\"submit\">删除</button>\n";
+        todo_items << "        </form>\n";
+        todo_items << "      </li>\n";
+    }
 
-    return html.str();
+    replaceAll(html, "{{TODOS}}", todo_items.str());
+    return html;
 }
 
 std::string Router::buildHttpResponse(
@@ -161,5 +162,14 @@ std::string Router::buildHttpResponse(
     response << "Connection: close\r\n";
     response << "\r\n";
     response << body;
+    return response.str();
+}
+
+std::string buildRedirectResponse(const std::string& location) {
+    std::ostringstream response;
+    response << "HTTP/1.1 303 See Other\r\n";
+    response << "Location: " << location << "\r\n";
+    response << "Connection: close\r\n";
+    response << "\r\n";
     return response.str();
 }

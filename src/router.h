@@ -4,6 +4,8 @@
 
 #include <string>
 
+std::string buildRedirectResponse(const std::string& location);
+
 class Router {
 public:
     explicit Router(TodoService& todo_service);

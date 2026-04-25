@@ -10,6 +10,9 @@ add_executable(personal_server
     src/http_server.cpp
     src/router.cpp
     src/todo_service.cpp
+    src/string_utils.cpp
+    src/file_utils.cpp
 )
+
 
 target_include_directories(personal_server PRIVATE src)

@@ -31,24 +31,18 @@ std::string Router::handleRequest(const std::string& request_text) const {
     }
 
     if (request.method == "POST" && request.path == "/todos/delete") {
-        if (request.body.rfind("todo=", 0) == 0) {
-            const std::string todo_text = decodeFormValue(request.body.substr(5));
-            if (todo_service_.deleteTodo(todo_text)) {
-                return buildRedirectResponse("/");
-            }
+        const std::string todo_text = extractFormValue(request.body, "todo");
+        if (!todo_text.empty() && todo_service_.deleteTodo(todo_text)) {
+            return buildRedirectResponse("/");
         }
-
         return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
     }
 
     if (request.method == "POST" && request.path == "/todos") {
-        if (request.body.rfind("todo=", 0) == 0) {
-            const std::string todo_text = decodeFormValue(request.body.substr(5));
-            if (todo_service_.addTodo(todo_text)) {
-                return buildRedirectResponse("/");
-            }
+        const std::string todo_text = extractFormValue(request.body, "todo");
+        if (!todo_text.empty() && todo_service_.addTodo(todo_text)) {
+            return buildRedirectResponse("/");
         }
-
         return buildHttpResponse("添加失败，请检查输入", "400 Bad Request", "text/plain; charset=utf-8");
     }
 

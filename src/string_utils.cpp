@@ -48,3 +48,18 @@ void replaceAll(std::string& text, const std::string& from, const std::string& t
         pos += to.size();
     }
 }
+
+std::string extractFormValue(const std::string& body, const std::string& field_name) {
+    const std::string prefix = field_name + "=";
+    const std::size_t field_pos = body.find(prefix);
+
+    if (field_pos == std::string::npos) {
+        return "";
+    }
+
+    const std::size_t value_start = field_pos + prefix.size();
+    const std::size_t value_end = body.find('&', value_start);
+    const std::string encoded_value = body.substr(value_start, value_end - value_start);
+
+    return decodeFormValue(encoded_value);
+}

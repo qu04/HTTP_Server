@@ -1,22 +1,23 @@
-#include "router.h"
-#include "todo_service.h"
 #include "file_utils.h"
+#include "http_request.h"
+#include "router.h"
 #include "string_utils.h"
+#include "todo_service.h"
 
 #include <sstream>
 #include <string>
 #include <vector>
 
-
-
 Router::Router(TodoService& todo_service) : todo_service_(todo_service) {}
 
 std::string Router::handleRequest(const std::string& request_text) const {
-    if (request_text.rfind("GET /health", 0) == 0) {
+    const HttpRequest request = parseHttpRequest(request_text);
+
+    if (request.method == "GET" && request.path == "/health") {
         return buildHttpResponse("ok", "200 OK", "text/plain; charset=utf-8");
     }
 
-    if (request_text.rfind("GET /static/style.css", 0) == 0) {
+    if (request.method == "GET" && request.path == "/static/style.css") {
         const std::string css = readTextFile("static/style.css");
         if (css.empty()) {
             return buildHttpResponse("CSS file not found", "404 Not Found", "text/plain; charset=utf-8");
@@ -24,45 +25,33 @@ std::string Router::handleRequest(const std::string& request_text) const {
         return buildHttpResponse(css, "200 OK", "text/css; charset=utf-8");
     }
 
-    if (request_text.rfind("GET / ", 0) == 0 || request_text.rfind("GET /HTTP", 0) == 0) {
+    if (request.method == "GET" && request.path == "/") {
         return buildHttpResponse(buildHomePage());
     }
 
-    if (request_text.rfind("POST /todos/delete", 0) == 0) {
-        const std::size_t body_pos = request_text.find("\r\n\r\n");
-        if (body_pos != std::string::npos) {
-            const std::string body = request_text.substr(body_pos + 4);
-            if (body.rfind("todo=", 0) == 0) {
-                const std::string todo_text = decodeFormValue(body.substr(5));
-                if (todo_service_.deleteTodo(todo_text)) {
-                    return buildRedirectResponse("/");
-                }
+    if (request.method == "POST" && request.path == "/todos/delete") {
+        if (request.body.rfind("todo=", 0) == 0) {
+            const std::string todo_text = decodeFormValue(request.body.substr(5));
+            if (todo_service_.deleteTodo(todo_text)) {
+                return buildRedirectResponse("/");
             }
-
-            return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
         }
 
-        return buildHttpResponse("请求格式错误", "400 Bad Request", "text/plain; charset=utf-8");
+        return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
     }
 
-    if (request_text.rfind("POST /todos", 0) == 0) {
-        const std::size_t body_pos = request_text.find("\r\n\r\n");
-        if (body_pos != std::string::npos) {
-            const std::string body = request_text.substr(body_pos + 4);
-            if (body.rfind("todo=", 0) == 0) {
-                const std::string todo_text = decodeFormValue(body.substr(5));
-                if (todo_service_.addTodo(todo_text)) {
-                    return buildRedirectResponse("/");
-                }
+    if (request.method == "POST" && request.path == "/todos") {
+        if (request.body.rfind("todo=", 0) == 0) {
+            const std::string todo_text = decodeFormValue(request.body.substr(5));
+            if (todo_service_.addTodo(todo_text)) {
+                return buildRedirectResponse("/");
             }
-
-            return buildHttpResponse("添加失败，请检查输入", "400 Bad Request", "text/plain; charset=utf-8");
         }
 
-        return buildHttpResponse("请求格式错误", "400 Bad Request", "text/plain; charset=utf-8");
+        return buildHttpResponse("添加失败，请检查输入", "400 Bad Request", "text/plain; charset=utf-8");
     }
 
-    std::string not_found_html =
+    const std::string not_found_html =
         "<html><body>"
         "<h1 style='color: red;'>404 - Not Found</h1>"
         "<p>你访问的页面不存在。</p>"

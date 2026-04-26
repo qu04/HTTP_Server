@@ -12,6 +12,7 @@ add_executable(personal_server
     src/todo_service.cpp
     src/string_utils.cpp
     src/file_utils.cpp
+    src/http_request.cpp
 )
 
 

@@ -1,5 +1,6 @@
 #include "file_utils.h"
 #include "http_request.h"
+#include "http_response.h"
 #include "router.h"
 #include "string_utils.h"
 #include "todo_service.h"
@@ -81,27 +82,4 @@ std::string Router::buildHomePage() const {
 
     replaceAll(html, "{{TODOS}}", todo_items.str());
     return html;
-}
-
-std::string Router::buildHttpResponse(
-    const std::string& body,
-    const std::string& status,
-    const std::string& content_type) const {
-    std::ostringstream response;
-    response << "HTTP/1.1 " << status << "\r\n";
-    response << "Content-Type: " << content_type << "\r\n";
-    response << "Content-Length: " << body.size() << "\r\n";
-    response << "Connection: close\r\n";
-    response << "\r\n";
-    response << body;
-    return response.str();
-}
-
-std::string buildRedirectResponse(const std::string& location) {
-    std::ostringstream response;
-    response << "HTTP/1.1 303 See Other\r\n";
-    response << "Location: " << location << "\r\n";
-    response << "Connection: close\r\n";
-    response << "\r\n";
-    return response.str();
 }

@@ -13,6 +13,7 @@ add_executable(personal_server
     src/string_utils.cpp
     src/file_utils.cpp
     src/http_request.cpp
+    src/http_response.cpp
 )
 
 

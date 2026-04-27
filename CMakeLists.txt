@@ -14,6 +14,7 @@ add_executable(personal_server
     src/file_utils.cpp
     src/http_request.cpp
     src/http_response.cpp
+    src/static_file_handler.cpp
 )
 
 

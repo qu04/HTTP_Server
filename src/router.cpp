@@ -2,6 +2,7 @@
 #include "http_request.h"
 #include "http_response.h"
 #include "router.h"
+#include "static_file_handler.h"
 #include "string_utils.h"
 #include "todo_service.h"
 
@@ -18,12 +19,8 @@ std::string Router::handleRequest(const std::string& request_text) const {
         return buildHttpResponse("ok", "200 OK", "text/plain; charset=utf-8");
     }
 
-    if (request.method == "GET" && request.path == "/static/style.css") {
-        const std::string css = readTextFile("static/style.css");
-        if (css.empty()) {
-            return buildHttpResponse("CSS file not found", "404 Not Found", "text/plain; charset=utf-8");
-        }
-        return buildHttpResponse(css, "200 OK", "text/css; charset=utf-8");
+    if (isStaticFileRequest(request)) {
+        return handleStaticFileRequest(request);
     }
 
     if (request.method == "GET" && request.path == "/") {

@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 
 static std::string getCurrentTimeString(){
     auto now = std::chrono::system_clock::now();
@@ -18,8 +19,14 @@ static std::string getCurrentTimeString(){
 }
 
 void logRequest(const HttpRequest& request,const std::string& status){
-     std::cout << "[" << getCurrentTimeString() << "] "
+    std::string current_time = getCurrentTimeString();
+     std::cout << "[" << current_time << "] "
      << "[" << request.method << "] "
      << request.path << " "
-     << status << std::endl;    
+     << status << std::endl;
+     std::ofstream output("logs/server.log", std::ios::app);
+     output <<  "[" << current_time << "] "
+     << "[" << request.method << "] "
+     << request.path << " "
+     << status << std::endl;
 }

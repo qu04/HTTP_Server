@@ -19,6 +19,8 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
+RUN mkdir -p logs
+
 COPY --from=builder /app/build/personal_server /app/personal_server
 COPY --from=builder /app/data /app/data
 COPY --from=builder /app/templates /app/templates

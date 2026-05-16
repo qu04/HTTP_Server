@@ -50,8 +50,7 @@ bool isStaticFileRequest(const HttpRequest& request){
     return request.method == "GET" && request.path.rfind("/static/",0) == 0;
 }
 
-
-std::string handleStaticFileRequest(const HttpRequest& request){
+HttpResponse handleStaticFileRequest(const HttpRequest& request){
     std::string file_path = request.path.substr(1);
     std::string content = readBinaryFile(file_path);
 

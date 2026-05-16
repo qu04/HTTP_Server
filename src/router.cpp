@@ -5,6 +5,7 @@
 #include "static_file_handler.h"
 #include "string_utils.h"
 #include "todo_service.h"
+#include "logger.h"
 
 #include <sstream>
 #include <string>
@@ -12,35 +13,51 @@
 
 Router::Router(TodoService& todo_service) : todo_service_(todo_service) {}
 
-std::string Router::handleRequest(const std::string& request_text) const {
+HttpResponse Router::handleRequest(const std::string& request_text) const {
     const HttpRequest request = parseHttpRequest(request_text);
+    
+    
 
     if (request.method == "GET" && request.path == "/health") {
-        return buildHttpResponse("ok", "200 OK", "text/plain; charset=utf-8");
+        HttpResponse response = buildHttpResponse("ok", "200 OK", "text/plain; charset=utf-8");
+        logRequest(request,response.status);
+        return response;
     }
 
     if (isStaticFileRequest(request)) {
-        return handleStaticFileRequest(request);
+        HttpResponse response = handleStaticFileRequest(request);
+        logRequest(request,response.status);
+        return response;
     }
 
     if (request.method == "GET" && request.path == "/") {
-        return buildHttpResponse(buildHomePage());
+        HttpResponse response = buildHttpResponse(buildHomePage());
+        logRequest(request,response.status);
+        return response;
     }
 
     if (request.method == "POST" && request.path == "/todos/delete") {
         const std::string todo_text = extractFormValue(request.body, "todo");
         if (!todo_text.empty() && todo_service_.deleteTodo(todo_text)) {
-            return buildRedirectResponse("/");
+            HttpResponse response = buildRedirectResponse("/");
+            logRequest(request,response.status);
+            return response;
         }
-        return buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
+        HttpResponse response = buildHttpResponse("删除失败", "400 Bad Request", "text/plain; charset=utf-8");
+        logRequest(request,response.status);
+        return response;
     }
 
     if (request.method == "POST" && request.path == "/todos") {
         const std::string todo_text = extractFormValue(request.body, "todo");
         if (!todo_text.empty() && todo_service_.addTodo(todo_text)) {
-            return buildRedirectResponse("/");
+            HttpResponse response = buildRedirectResponse("/");
+            logRequest(request,response.status);
+            return response;
         }
-        return buildHttpResponse("添加失败，请检查输入", "400 Bad Request", "text/plain; charset=utf-8");
+        HttpResponse response = buildHttpResponse("添加失败，请检查输入", "400 Bad Request", "text/plain; charset=utf-8");
+        logRequest(request,response.status);
+        return response;
     }
 
     const std::string not_found_html =
@@ -49,8 +66,9 @@ std::string Router::handleRequest(const std::string& request_text) const {
         "<p>你访问的页面不存在。</p>"
         "<a href='/'>点击这里返回首页</a>"
         "</body></html>";
-
-    return buildHttpResponse(not_found_html, "404 Not Found");
+    HttpResponse response = buildHttpResponse(not_found_html, "404 Not Found");
+    logRequest(request,response.status);
+    return response;
 }
 
 std::string Router::buildHomePage() const {

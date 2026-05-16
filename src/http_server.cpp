@@ -66,11 +66,11 @@ void HttpServer::run() {
         }
 
         const std::string request_text(buffer, static_cast<std::size_t>(bytes_read));
-        const std::string response_text = router_.handleRequest(request_text);
+        const HttpResponse response = router_.handleRequest(request_text);
 
         // 第 6 步：send
         // 发送完整 HTTP 响应，注意响应头和响应体之间必须有 \r\n\r\n。
-        ssize_t bytes_sent = send(client_fd, response_text.c_str(), response_text.size(), 0);
+        ssize_t bytes_sent = send(client_fd, response.raw.c_str(), response.raw.size(), 0);
         if (bytes_sent < 0) {
             std::cerr << "send 发送响应失败" << std::endl;
         }

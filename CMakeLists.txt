@@ -15,6 +15,7 @@ add_executable(personal_server
     src/http_request.cpp
     src/http_response.cpp
     src/static_file_handler.cpp
+    src/logger.cpp
 )
 
 
